@@ -7,38 +7,84 @@
     <style>
         .detection {
             border: 1px solid #ccc;
-            margin: 10px;
-            padding: 10px;
+            margin: 20px 0;
+            padding: 20px;
             border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .image-container img {
+            max-width: 45%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <h1>View all detections from every camera running this</h1>
-    <div id="detections"></div>
+    <h1>View all detections from every camera running this program</h1>
+    <div id="detections">Loading detections...</div>
 
     <script>
         async function fetchDetections() {
             try {
                 const response = await fetch('http://127.0.0.1:5000/api/detections');
-                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
 
+                const data = await response.json();
                 const detectionsDiv = document.getElementById('detections');
                 detectionsDiv.innerHTML = '';
+
+                if (data.length === 0) {
+                    detectionsDiv.innerHTML = '<p>No detections found.</p>';
+                    return;
+                }
 
                 data.forEach(detection => {
                     const detectionDiv = document.createElement('div');
                     detectionDiv.className = 'detection';
+
+                    // Construct URLs for both original and annotated images
+                    const originalImageUrl = `http://127.0.0.1:5000/static/images/original/${encodeURIComponent(detection.filename)}`;
+                    const annotatedFilename = detection.filename.replace("alert_knife_detected_", "alert_knife_detected_annotated_");
+                    const annotatedImageUrl = `http://127.0.0.1:5000/static/images/annotated/${encodeURIComponent(annotatedFilename)}`;
+
                     detectionDiv.innerHTML = `
                         <strong>Date:</strong> ${detection.date}<br>
                         <strong>Time:</strong> ${detection.time}<br>
                         <strong>Filename:</strong> ${detection.filename}<br>
-                        <a href="static/images/original/${detection.filename}" target="_blank">View Image</a>
+
+                        <div class="image-container">
+                            <div>
+                                <p><strong>Original Image:</strong></p>
+                                <a href="${originalImageUrl}" target="_blank">
+                                    <img src="${originalImageUrl}" alt="Original Image">
+                                </a>
+                            </div>
+                            <div>
+                                <p><strong>Annotated Image:</strong></p>
+                                <a href="${annotatedImageUrl}" target="_blank">
+                                    <img src="${annotatedImageUrl}" alt="Annotated Image">
+                                </a>
+                            </div>
+                        </div>
                     `;
+
                     detectionsDiv.appendChild(detectionDiv);
                 });
             } catch (error) {
                 console.error('Error fetching detections:', error);
+                document.getElementById('detections').innerHTML = `<p style="color:red;">Failed to load detections. Check console for details.</p>`;
             }
         }
 
