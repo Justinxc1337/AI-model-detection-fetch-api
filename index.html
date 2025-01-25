@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knife Detection Dashboard</title>
+    <style>
+        .detection {
+            border: 1px solid #ccc;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>View all detections from every camera running this</h1>
+    <div id="detections"></div>
+
+    <script>
+        async function fetchDetections() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/detections');
+                const data = await response.json();
+
+                const detectionsDiv = document.getElementById('detections');
+                detectionsDiv.innerHTML = '';
+
+                data.forEach(detection => {
+                    const detectionDiv = document.createElement('div');
+                    detectionDiv.className = 'detection';
+                    detectionDiv.innerHTML = `
+                        <strong>Date:</strong> ${detection.date}<br>
+                        <strong>Time:</strong> ${detection.time}<br>
+                        <strong>Filename:</strong> ${detection.filename}<br>
+                        <a href="static/images/original/${detection.filename}" target="_blank">View Image</a>
+                    `;
+                    detectionsDiv.appendChild(detectionDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching detections:', error);
+            }
+        }
+
+        fetchDetections();
+    </script>
+</body>
+</html>
